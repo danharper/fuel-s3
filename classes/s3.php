@@ -56,7 +56,7 @@ class S3
 
 	public static $useSSL = false;
 	public static $useSSLValidation = true;
-	public static $useExceptions = false;
+	public static $useExceptions = true;
 
 	// SSL CURL SSL options - only needed if you are experiencing problems with your OpenSSL configuration
 	public static $sslKey = null;
@@ -80,7 +80,7 @@ class S3
 		$secretKey = \Config::get('s3.secret_key');
 
 		if (empty($accessKey) || empty($secretKey)) {
-			throw new \S3Exception('S3::_init(): You must set S3 keys in Fuel-S3 config.');
+			self::__triggerError('S3::_init(): You must set S3 keys in Fuel-S3 config.');
 		}
 
 		self::setAuth($accessKey, $secretKey);
@@ -220,7 +220,7 @@ class S3
 	* @param integer $code Error code
 	* @return void
 	*/
-	private static function __triggerError($message, $file, $line, $code = 0)
+	private static function __triggerError($message, $file = null, $line = null, $code = 0)
 	{
 		if (self::$useExceptions)
 			throw new S3Exception($message, $file, $line, $code);
