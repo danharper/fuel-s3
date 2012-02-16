@@ -54,6 +54,8 @@ class S3
 	public static $endpoint = 's3.amazonaws.com';
 	public static $proxy = null;
 
+	public static $default_acl = 'ACL_PRIVATE';
+
 	public static $useSSL = false;
 	public static $useSSLValidation = true;
 	public static $useExceptions = true;
@@ -84,6 +86,7 @@ class S3
 		}
 
 		self::setAuth($accessKey, $secretKey);
+		self::setACL(\Config::get('s3.default_acl'));
 		self::$useSSL = \Config::get('s3.use_ssl');
 		self::$endpoint = \Config::get('s3.endpoint');
 	}
@@ -118,8 +121,42 @@ class S3
 	*
 	* @return boolean
 	*/
-	public static function hasAuth() {
+	public static function hasAuth()
+	{
 		return (self::$__accessKey !== null && self::$__secretKey !== null);
+	}
+
+
+	/**
+	 * Set default ACL level
+	 * 
+	 * @param String $acl Level
+	 */
+	public static function setACL($acl)
+	{
+		if ( ! defined('self::'.$acl))
+			self::__triggerError('S3::_init(): The default ACL level set in Fuel-S3 config is not valid.');
+		self::$default_acl = $acl;
+	}
+
+
+	/**
+	 * Get the ACL constant for provided string, or default
+	 * 
+	 * @param  String | NULL $acl Over-ride default ACL
+	 * @return Constant
+	 */
+	public static function getACL($override)
+	{
+		$acl = self::$default_acl;
+
+		if ($override !== null && defined('self::'.$override))
+			$acl = self::$override;
+
+		if ($acl === null)
+			self::__triggerError('S3::getACL(): You must set a default ACL level in Fuel-S3 config.');
+			
+		return constant('self::' . $acl);
 	}
 
 
@@ -368,8 +405,9 @@ class S3
 	* @param string $location Set as "EU" to create buckets hosted in Europe
 	* @return boolean
 	*/
-	public static function putBucket($bucket, $acl = self::ACL_PRIVATE, $location = false)
+	public static function putBucket($bucket, $acl = null, $location = false)
 	{
+		$acl = self::getACL($acl);
 		$rest = new S3Request('PUT', $bucket, '', self::$endpoint);
 		$rest->setAmzHeader('x-amz-acl', $acl);
 
@@ -472,8 +510,9 @@ class S3
 	* @param constant $storageClass Storage class constant
 	* @return boolean
 	*/
-	public static function putObject($input, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = array(), $requestHeaders = array(), $storageClass = self::STORAGE_CLASS_STANDARD)
+	public static function putObject($input, $bucket, $uri, $acl = null, $metaHeaders = array(), $requestHeaders = array(), $storageClass = self::STORAGE_CLASS_STANDARD)
 	{
+		$acl = self::getACL($acl);
 		if ($input === false) return false;
 		$rest = new S3Request('PUT', $bucket, $uri, self::$endpoint);
 
@@ -555,8 +594,9 @@ class S3
 	* @param string $contentType Content type
 	* @return boolean
 	*/
-	public static function putObjectFile($file, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = array(), $contentType = null)
+	public static function putObjectFile($file, $bucket, $uri, $acl = null, $metaHeaders = array(), $contentType = null)
 	{
+		$acl = self::getACL($acl);
 		return self::putObject(self::inputFile($file), $bucket, $uri, $acl, $metaHeaders, $contentType);
 	}
 
@@ -572,8 +612,9 @@ class S3
 	* @param string $contentType Content type
 	* @return boolean
 	*/
-	public static function putObjectString($string, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = array(), $contentType = 'text/plain')
+	public static function putObjectString($string, $bucket, $uri, $acl = null, $metaHeaders = array(), $contentType = 'text/plain')
 	{
+		$acl = self::getACL($acl);
 		return self::putObject($string, $bucket, $uri, $acl, $metaHeaders, $contentType);
 	}
 
@@ -650,8 +691,9 @@ class S3
 	* @param constant $storageClass Storage class constant
 	* @return mixed | false
 	*/
-	public static function copyObject($srcBucket, $srcUri, $bucket, $uri, $acl = self::ACL_PRIVATE, $metaHeaders = array(), $requestHeaders = array(), $storageClass = self::STORAGE_CLASS_STANDARD)
+	public static function copyObject($srcBucket, $srcUri, $bucket, $uri, $acl = null, $metaHeaders = array(), $requestHeaders = array(), $storageClass = self::STORAGE_CLASS_STANDARD)
 	{
+		$acl = self::getACL($acl);
 		$rest = new S3Request('PUT', $bucket, $uri, self::$endpoint);
 		$rest->setHeader('Content-Length', 0);
 		foreach ($requestHeaders as $h => $v) $rest->setHeader($h, $v);
@@ -1034,9 +1076,10 @@ class S3
 	* @param boolean $flashVars Includes additional "Filename" variable posted by Flash
 	* @return object
 	*/
-	public static function getHttpUploadPostParams($bucket, $uriPrefix = '', $acl = self::ACL_PRIVATE, $lifetime = 3600,
+	public static function getHttpUploadPostParams($bucket, $uriPrefix = '', $acl = null, $lifetime = 3600,
 	$maxFileSize = 5242880, $successRedirect = "201", $amzHeaders = array(), $headers = array(), $flashVars = false)
 	{
+		$acl = self::getACL($acl);
 		// Create policy object
 		$policy = new stdClass;
 		$policy->expiration = gmdate('Y-m-d\TH:i:s\Z', (time() + $lifetime));
