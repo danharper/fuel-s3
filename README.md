@@ -13,7 +13,7 @@ S3::listBuckets();
 ```
 
 ### ACL Levels
-When setting a custom ACL level, set it as a String, not a constant as described the [class methods](http://undesigned.org.za/2007/10/22/amazon-s3-php-class/documentation). For example:
+When setting a custom ACL level, set it as a String, not a Constant as described the [class methods](http://undesigned.org.za/2007/10/22/amazon-s3-php-class/documentation). For example:
 
 ```php
 S3::putObject($file, $bucket, $name, 'ACL_PUBLIC_READ');
