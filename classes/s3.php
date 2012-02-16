@@ -80,11 +80,7 @@ class S3
 		\Config::load('s3', true);
 		$accessKey = \Config::get('s3.access_key');
 		$secretKey = \Config::get('s3.secret_key');
-
-		if (empty($accessKey) || empty($secretKey)) {
-			self::__triggerError('S3::_init(): You must set S3 keys in Fuel-S3 config.');
-		}
-
+		
 		self::setAuth($accessKey, $secretKey);
 		self::setACL(\Config::get('s3.default_acl'));
 		self::$useSSL = \Config::get('s3.use_ssl');
@@ -111,6 +107,9 @@ class S3
 	*/
 	public static function setAuth($accessKey, $secretKey)
 	{
+		if (empty($accessKey) || empty($secretKey))
+			self::__triggerError('S3::_init(): You must set S3 keys in Fuel-S3 config.');
+		
 		self::$__accessKey = $accessKey;
 		self::$__secretKey = $secretKey;
 	}
