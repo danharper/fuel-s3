@@ -150,7 +150,7 @@ class S3
 		$acl = self::$default_acl;
 
 		if ($override !== null && defined('self::'.$override))
-			$acl = self::$override;
+			$acl = $override;
 
 		if ($acl === null)
 			self::__triggerError('S3::getACL(): You must set a default ACL level in Fuel-S3 config.');
